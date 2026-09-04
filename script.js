@@ -489,7 +489,24 @@ async function fetchWeather(lat, lon) {
   const data = await res.json();
 
   const current = data.current;
-  const hourIndex = data.hourly.time.indexOf(current.time);
+
+  // The "current" timestamp from Open-Meteo can fall between hourly slots
+  // (e.g. 18:23 while hourly data is only at 18:00 / 19:00), so an exact
+  // string match against hourly.time often misses and silently returns
+  // null (shown as "—"). Instead, find the closest hourly slot by actual
+  // time difference so rain chance always resolves to a real value.
+  let hourIndex = data.hourly.time.indexOf(current.time);
+  if (hourIndex === -1 && data.hourly.time.length) {
+    const currentMs = new Date(current.time).getTime();
+    let closestDiff = Infinity;
+    data.hourly.time.forEach((t, i) => {
+      const diff = Math.abs(new Date(t).getTime() - currentMs);
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        hourIndex = i;
+      }
+    });
+  }
   const rainPct = hourIndex !== -1 ? data.hourly.precipitation_probability[hourIndex] : null;
 
   state.weather = {

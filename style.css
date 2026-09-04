@@ -179,7 +179,25 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.6; }
   animation: rise-in 0.7s var(--ease-out) both;
 }
 
-.masthead-brand { display: flex; align-items: center; gap: 14px; }
+.masthead-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 22px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.35);
+  transition: background 0.6s var(--ease-out), border-color 0.6s var(--ease-out);
+}
+
+.masthead-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 
 .brand-mark { width: 34px; height: 34px; color: var(--accent); flex-shrink: 0; }
 
@@ -189,12 +207,14 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.6; }
   font-size: clamp(26px, 3.4vw, 34px);
   letter-spacing: -0.01em;
   line-height: 1;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.16);
 }
 
 .masthead-tag {
   font-size: 13.5px;
   color: var(--text-muted);
-  margin-top: 6px;
+  margin-top: 0;
+  margin-left: 48px;
 }
 
 .search-box {
@@ -553,6 +573,72 @@ body[data-weather="storm-day"] .prayer.active-prayer {
 }
 
 /* =========================================================
+   ABOUT
+   ========================================================= */
+
+.about-section {
+  margin-top: clamp(30px, 5vw, 46px);
+  animation: rise-in 0.75s 0.2s var(--ease-out) both;
+}
+
+.about-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-radius: var(--radius-lg);
+  padding: clamp(20px, 3vw, 28px);
+  box-shadow: var(--shadow-panel);
+  transition: background 0.6s var(--ease-out), border-color 0.6s var(--ease-out);
+}
+
+.about-copy { max-width: 560px; }
+
+.about-card h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.about-text {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.about-text strong { color: var(--text-primary); }
+
+.about-contact {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.about-link {
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-strong);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: transform 0.2s, background 0.2s, color 0.2s;
+}
+
+.about-link:hover {
+  transform: translateY(-1px);
+  background: var(--text-primary);
+  color: var(--glass-bg-strong);
+}
+
+/* =========================================================
    FOOTER / TOASTS
    ========================================================= */
 
@@ -645,6 +731,9 @@ body[data-weather="storm-day"] .prayer.active-prayer {
   .weather-hero-info { grid-column: 1 / -1; }
   .forecast-strip { grid-template-columns: repeat(3, 1fr); }
   .location-strip { align-items: flex-start; }
+  .about-card { flex-direction: column; align-items: flex-start; }
+  .about-contact { width: 100%; }
+  .about-link { flex: 1; text-align: center; }
 }
 
 @media (max-width: 420px) {
