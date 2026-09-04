@@ -61,6 +61,10 @@
 
   <symbol id="icon-alert" viewBox="0 0 24 24"><path d="M12 3 22 20H2Z" stroke-linejoin="round"/><line x1="12" y1="9.5" x2="12" y2="14" stroke-linecap="round"/><circle cx="12" cy="17" r="0.2" fill="currentColor" stroke-width="1.8"/></symbol>
 
+  <symbol id="icon-star" viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.88 6.5.95-4.7 4.58 1.11 6.47L12 18.9l-5.81 3.06 1.11-6.47-4.7-4.58 6.5-.95z" stroke-linejoin="round"/></symbol>
+
+  <symbol id="icon-close" viewBox="0 0 24 24"><line x1="6.5" y1="6.5" x2="17.5" y2="17.5" stroke-linecap="round"/><line x1="17.5" y1="6.5" x2="6.5" y2="17.5" stroke-linecap="round"/></symbol>
+
 </svg>
 
 <main class="page">
@@ -94,15 +98,24 @@
 
   <!-- Location strip -->
   <section class="location-strip">
-    <div>
-      <h2 id="cityName" class="skeleton-hide">Locating you…</h2>
+    <div class="location-meta">
+      <div class="location-name-row">
+        <h2 id="cityName" class="skeleton-hide">Locating you…</h2>
+        <button type="button" id="favToggle" class="star-btn" title="Save this city" aria-label="Save this city" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-star"/></svg>
+        </button>
+      </div>
       <p id="currentDate" class="skeleton-hide">—</p>
+      <p id="localTime" class="local-time skeleton-hide">—</p>
     </div>
     <div class="unit-toggle" id="unitToggle" role="group" aria-label="Temperature unit">
       <button type="button" class="unit-btn is-active" data-unit="C" aria-pressed="true">°C</button>
       <button type="button" class="unit-btn" data-unit="F" aria-pressed="false">°F</button>
     </div>
   </section>
+
+  <!-- Saved cities -->
+  <section class="favorites-bar" id="favoritesBar" aria-label="Saved cities" hidden></section>
 
   <!-- Main Dashboard -->
   <section class="dashboard">

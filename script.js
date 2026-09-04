@@ -80,6 +80,11 @@ const countdownFill = $("countdownFill");
 const forecastStrip = $("forecastStrip");
 const toastStack = $("toastStack");
 
+// Added-feature elements
+const favToggle = $("favToggle");
+const favoritesBar = $("favoritesBar");
+const localTimeEl = $("localTime");
+
 /* =========================================================
    STATE
    ========================================================= */
@@ -93,6 +98,12 @@ const state = {
   countdownInterval: null,
   prevInterval: null,    // seconds between previous & next prayer, for the progress bar
   prevPrayerSeconds: null,
+
+  // --- added features (local time + saved cities) ---
+  lat: null,
+  lon: null,
+  label: null,
+  localClockInterval: null,
 };
 
 /* =========================================================
@@ -488,6 +499,9 @@ async function fetchWeather(lat, lon) {
   if (!res.ok) throw new Error("weather-fetch-failed");
   const data = await res.json();
 
+  // Timezone for the local clock (Al Adhan also sets this; both agree).
+  if (data.timezone) state.timezone = data.timezone;
+
   const current = data.current;
 
   // The "current" timestamp from Open-Meteo can fall between hourly slots
@@ -653,8 +667,15 @@ async function loadLocation(lat, lon, label) {
   searchBtn.disabled = true;
   try {
     cityName.textContent = label;
+    state.lat = lat;
+    state.lon = lon;
+    state.label = label;
     await Promise.all([fetchWeather(lat, lon), fetchPrayerTimes(lat, lon)]);
     localStorage.setItem("skySalahLastLocation", JSON.stringify({ lat, lon, label }));
+
+    startLocalClock();
+    updateFavToggle();
+    renderFavorites();
   } catch (err) {
     console.error(err);
     showToast("Couldn't load data for this location. Please try again.");
@@ -769,6 +790,7 @@ function fallbackLocation() {
 
 function init() {
   setUnit(state.unit);
+  initFeatures();
   setSkeleton(true);
   SkyScene.start();
 
@@ -799,3 +821,120 @@ function init() {
 }
 
 init();
+/* =========================================================
+   ADDED FEATURES — live local time + saved cities
+   Fully client-side: local time is recomputed from the city's
+   timezone; saved cities persist in localStorage (this browser
+   only — no account or backend involved).
+   ========================================================= */
+
+/* ---------- Local time ---------- */
+
+function startLocalClock() {
+  if (state.localClockInterval) clearInterval(state.localClockInterval);
+  const tz = state.timezone;
+  if (!tz) {
+    localTimeEl.textContent = "—";
+    return;
+  }
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true,
+  });
+  const tick = () => {
+    localTimeEl.textContent = `Local time ${fmt.format(new Date())} · ${tz.replace(/_/g, " ")}`;
+  };
+  tick();
+  state.localClockInterval = setInterval(tick, 1000);
+}
+
+/* ---------- Saved / favorite cities ---------- */
+
+const FAV_KEY = "skySalahFavorites";
+
+function getFavorites() {
+  try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; }
+  catch { return []; }
+}
+function saveFavorites(list) {
+  localStorage.setItem(FAV_KEY, JSON.stringify(list));
+}
+function favKey(lat, lon) {
+  return `${lat.toFixed(3)},${lon.toFixed(3)}`;
+}
+function isFavorite(lat, lon) {
+  if (lat === null) return false;
+  const k = favKey(lat, lon);
+  return getFavorites().some((f) => favKey(f.lat, f.lon) === k);
+}
+
+function toggleFavorite() {
+  if (state.lat === null) return;
+  const k = favKey(state.lat, state.lon);
+  let list = getFavorites();
+  if (list.some((f) => favKey(f.lat, f.lon) === k)) {
+    list = list.filter((f) => favKey(f.lat, f.lon) !== k);
+    showToast("Removed from saved cities.");
+  } else {
+    list.unshift({ label: state.label, lat: state.lat, lon: state.lon });
+    list = list.slice(0, 12); // keep the bar tidy
+    showToast("Saved to your cities.");
+  }
+  saveFavorites(list);
+  updateFavToggle();
+  renderFavorites();
+}
+
+function removeFavorite(fav) {
+  saveFavorites(getFavorites().filter((f) => favKey(f.lat, f.lon) !== favKey(fav.lat, fav.lon)));
+  updateFavToggle();
+  renderFavorites();
+  showToast("Removed from saved cities.");
+}
+
+function updateFavToggle() {
+  const fav = isFavorite(state.lat, state.lon);
+  favToggle.classList.toggle("is-active", fav);
+  favToggle.setAttribute("aria-pressed", String(fav));
+  favToggle.title = fav ? "Remove from saved cities" : "Save this city";
+}
+
+function renderFavorites() {
+  const list = getFavorites();
+  favoritesBar.innerHTML = "";
+  if (!list.length) {
+    favoritesBar.hidden = true;
+    return;
+  }
+  favoritesBar.hidden = false;
+
+  list.forEach((fav) => {
+    const current =
+      state.lat !== null && favKey(fav.lat, fav.lon) === favKey(state.lat, state.lon);
+
+    const chip = document.createElement("div");
+    chip.className = "fav-chip" + (current ? " is-current" : "");
+
+    const load = document.createElement("button");
+    load.type = "button";
+    load.className = "fav-chip-load";
+    load.textContent = fav.label;
+    load.addEventListener("click", () => loadLocation(fav.lat, fav.lon, fav.label));
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "fav-chip-del";
+    del.setAttribute("aria-label", `Remove ${fav.label}`);
+    del.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-close"/></svg>`;
+    del.addEventListener("click", (e) => { e.stopPropagation(); removeFavorite(fav); });
+
+    chip.append(load, del);
+    favoritesBar.appendChild(chip);
+  });
+}
+
+/* ---------- Feature init ---------- */
+
+function initFeatures() {
+  renderFavorites();
+  favToggle.addEventListener("click", toggleFavorite);
+}
