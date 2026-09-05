@@ -58,8 +58,13 @@ const RAIN_ICON_MIN_PCT = 20;
 
 function forecastMeta(day) {
   let code = day.code;
-  if (RAIN_LIKE_CODES.has(code) && (day.rainPct ?? 0) < RAIN_ICON_MIN_PCT) {
-    code = 3; // Overcast -> falls back to the "clouds" icon instead of rain
+  if (RAIN_LIKE_CODES.has(code)) {
+    const pct = day.rainPct ?? 0;
+    if (pct === 0) {
+      code = 0; // No rain chance at all -> show clear sky instead of any cloud
+    } else if (pct < RAIN_ICON_MIN_PCT) {
+      code = 3; // Some slight chance, but not enough to earn the rain icon -> partly cloudy
+    }
   }
   return weatherMeta(code, true);
 }
