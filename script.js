@@ -46,6 +46,24 @@ function weatherMeta(code, isDay) {
   return { ...base, icon, isDay };
 }
 
+// Open-Meteo's daily weather_code reflects the single worst moment of the
+// day (e.g. one hour of passing drizzle), so it can report "light rain" for
+// a day that is otherwise dry with a near-zero rain chance. Left unchecked,
+// that makes the 7-day strip show a rain icon almost every day even when
+// the printed rain % says otherwise. If the code is rain/drizzle/showers
+// but the day's actual max rain probability is too low to back it up,
+// downgrade it to an overcast/cloud icon so the icon matches the number.
+const RAIN_LIKE_CODES = new Set([51, 53, 55, 61, 63, 65, 80, 81]);
+const RAIN_ICON_MIN_PCT = 20;
+
+function forecastMeta(day) {
+  let code = day.code;
+  if (RAIN_LIKE_CODES.has(code) && (day.rainPct ?? 0) < RAIN_ICON_MIN_PCT) {
+    code = 3; // Overcast -> falls back to the "clouds" icon instead of rain
+  }
+  return weatherMeta(code, true);
+}
+
 /* =========================================================
    DOM REFS
    ========================================================= */
@@ -471,7 +489,7 @@ function renderWeather() {
 function renderForecast() {
   forecastStrip.innerHTML = "";
   state.daily.forEach((day, idx) => {
-    const meta = weatherMeta(day.code, true);
+    const meta = forecastMeta(day);
     const date = new Date(day.date);
     const dayLabel = idx === 0 ? "Today" : date.toLocaleDateString("en-US", { weekday: "short" });
     const dateLabel = date.toLocaleDateString("en-US", { day: "numeric", month: "short" });
